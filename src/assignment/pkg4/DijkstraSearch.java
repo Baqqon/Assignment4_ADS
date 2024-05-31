@@ -1,27 +1,48 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
-public class BreadthFirstSearch<Vertex> extends Search<Vertex> {
-    public BreadthFirstSearch(MyGraph<Vertex> graph, Vertex source) {
-        super(source);
-        bfs(graph, source);
-    }
+public class DijkstraSearch<V> {
 
-    private void bfs(MyGraph<Vertex> graph, Vertex current) {
-        marked.add(current);
-        Queue<Vertex> queue = new LinkedList<>();
-        queue.add(current);
+    private final Map<Vertex<V>, Double> distances = new HashMap<>();
+    private final Map<Vertex<V>, Vertex<V>> previous = new HashMap<>();
+    private final PriorityQueue<Vertex<V>> priorityQueue = new PriorityQueue<>(Comparator.comparing(distances::get));
 
-        while (!queue.isEmpty()) {
-            Vertex v = queue.remove();
+    public void dijkstra(WeightedGraph<V> graph, Vertex<V> source) {
+        distances.put(source, 0.0);
+        priorityQueue.add(source);
 
-            for (Vertex vertex : graph.adjacencyList(v)) {
-                if (!marked.contains(vertex)) {
-                    marked.add(vertex);
-                    edgeTo.put(vertex, v);
-                    queue.add(vertex);
+        while (!priorityQueue.isEmpty()) {
+            Vertex<V> current = priorityQueue.poll();
+
+            for (Edge<V> edge : graph.getAdjVertices(current)) {
+                Vertex<V> neighbor = edge.destination();
+                double newDist = distances.get(current) + edge.weight();
+                if (newDist < distances.getOrDefault(neighbor, Double.POSITIVE_INFINITY)) {
+                    distances.put(neighbor, newDist);
+                    previous.put(neighbor, current);
+                    priorityQueue.add(neighbor);
                 }
             }
         }
+    }
+
+    // Check if path exists to destination
+    public boolean hasPath(Vertex<V> destination) {
+        return previous.get(destination) != null;
+    }
+
+    public double getDistanceTo(Vertex<V> destination) {
+        return distances.getOrDefault(destination, Double.POSITIVE_INFINITY);
+    }
+
+    public List<Vertex<V>> getShortestPath(Vertex<V> destination) {
+        if (!hasPath(destination)) {
+            return null;
+        }
+        List<Vertex<V>> path = new LinkedList<>();
+        for (Vertex<V> at = destination; at != null; at = previous.get(at)) {
+            path.add(at);
+        }
+        Collections.reverse(path);
+        return path;
     }
 }
